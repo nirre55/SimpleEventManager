@@ -36,10 +36,13 @@ class Event:
     #get the last id_event on the file and add 1 to id
     @property
     def get_id_event(self):
+        if os.stat(self.path()).st_size == 0:
+            return 0
         with open(self.path(), "r") as f:
             json_load = json.load(f)
         data = json_load["events"]
-
+        if (len(data) == 0):
+            return 0
         return data[-1]["id"] + 1
 
 
@@ -62,22 +65,16 @@ class Event:
     def save(self):
         if not os.path.exists(EVENTS_DIR):
             os.makedirs(EVENTS_DIR, exist_ok=True)
-        if not os.path.isfile(self.path()):
             data = {"events": []}
-            with open(self.path(), "w") as f:
+            with open(self.path(), "w+") as f:
                 json.dump(data, f, indent=4)
         else:
             print("os.path.isfile(self.path)")
 
 
 
-
-
-
     #add new data on the JSON file
     def addData(self, data):
-        self.save()
-
         with open(self.path(), "r+") as f:
             file_data = json.load(f)
             file_data["events"].append(data)
@@ -85,15 +82,66 @@ class Event:
             json.dump(file_data, f, indent=4, default=self.myconverter)
 
 
+    #update data on the JSON file with new informations
+    def updateData(self, id_value, data_to_update=None):
+        with open(self.path(), "r") as f:
+            json_load = json.load(f)
+        data = json_load["events"]
+        if (id_value >= len(data)):
+            return {"Error": "id doesn't exist"}
+        else:
+            key_list = list(data_to_update.keys())
+            val_list = list(data_to_update.values())
+            for i in range(len(key_list)):
+                json_load["events"][id_value][key_list[i]] = val_list[i]
+
+            with open(self.path(), "w") as f:
+                json.dump(json_load, f, indent=4)
+            return {"Response": "done!"}
+
+
+    def deleteData(self, id_value):
+        with open(self.path(), "r") as f:
+            json_load = json.load(f)
+        data = json_load["events"]
+        if (id_value >= len(data)):
+            return {"Error": "id doesn't exist"}
+        else:
+            del json_load["events"][id_value]
+            with open(self.path(), "w") as f:
+                json.dump(json_load, f, indent=4)
+            self.update_id()
+            return {"Response": "done!"}
+
+    def update_id(self):
+        with open(self.path(), "r") as f:
+            json_load = json.load(f)
+        data = json_load["events"]
+        for i in range(len(data)):
+            json_load["events"][i]["id"] = i
+        with open(self.path(), "w") as f:
+            json.dump(json_load, f, indent=4)
+
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     event = Event()
-    data_id = {"id": event.get_id_event}
-    data = {"title": "rakan", "content": "soug", "start_date": "1998/05/05 01:00:00", "end_date": "2000/05/05 01:00:00", "timezone": event.time_zone}
-    data_id.update(data)
-    print(data_id)
-    event.addData(data_id)
+"""
+    # create folder and json file
+    event.save()
+    # create dictionnary of data
+    data = {"id": event.get_id_event, "title": "Festival de music 3", "content": "Lancement du plus grand festivale de music 3", "start_date": "2023/01/01 15:00:00", "end_date": "2023/01/30 15:00:00", "timezone": event.time_zone}
+    # add data to the json file
+    event.addData(data)
 
+"""
 
 
 
